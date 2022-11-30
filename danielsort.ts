@@ -28,7 +28,6 @@ const videoFolder = path.join(basePath, expectedFolders[2]);
 const applicationsFolder = path.join(basePath, expectedFolders[4]);
 const miscFolder = path.join(basePath, expectedFolders[5]);
 
-
 /**
  * walks through the directory recursively and returns all the files inside it.
  * @param directory the directory to walk through
@@ -67,44 +66,46 @@ console.log("Files found: ", files.length);
 files.forEach((file) => console.log(file));
 console.log("Now sorting files...");
 
+const fileTypeSorting = [
+    {
+        match: fType => fType?.match(OFFICE_OPEN_XML_REGEX) || fType?.match(PDF_YML_CSV_REGEX) || fType?.startsWith("text"),
+        folder: documentFolder
+    },
+    {
+        match: fType => fType?.startsWith("image"),
+        folder: imageFolder
+    },
+    {
+        match: fType => fType?.startsWith("video"),
+        folder: videoFolder
+    },
+    {
+        match: fType => fType?.startsWith("audio"),
+        folder: audioFolder
+    },
+    {
+        match: fType => fType?.startsWith("application"),
+        folder: applicationsFolder
+    },
+    {
+        match: fType => true,
+        folder: miscFolder
+    }
+];
+
 // sort the files
-files.forEach((file) => {
+for (const file of files) {
     const fType = mime.getType(file);
 
-    if (fType?.match(OFFICE_OPEN_XML_REGEX)) {
-        if (!fs.existsSync(documentFolder)) fs.mkdirSync(documentFolder);
-        console.log(`Moving ${file} to ${documentFolder}`);
-        fs.renameSync(file, path.join(documentFolder, path.basename(file)));
-    } else if (fType?.match(PDF_YML_CSV_REGEX)) {
-        if (!fs.existsSync(documentFolder)) fs.mkdirSync(documentFolder);
-        console.log(`Moving ${file} to ${documentFolder}`);
-        fs.renameSync(file, path.join(documentFolder, path.basename(file)));
-    } else if (fType?.startsWith("text")) {
-        if (!fs.existsSync(documentFolder)) fs.mkdirSync(documentFolder);
-        console.log(`Moving ${file} to ${documentFolder}`);
-        fs.renameSync(file, path.join(documentFolder, path.basename(file)));
-    } else if (fType?.startsWith("image")) {
-        if (!fs.existsSync(imageFolder)) fs.mkdirSync(imageFolder);
-        console.log(`Moving ${file} to ${imageFolder}`);
-        fs.renameSync(file, path.join(imageFolder, path.basename(file)));
-    } else if (fType?.startsWith("video")) {
-        if (!fs.existsSync(videoFolder)) fs.mkdirSync(videoFolder);
-        console.log(`Moving ${file} to ${videoFolder}`);
-        fs.renameSync(file, path.join(videoFolder, path.basename(file)));
-    } else if (fType?.startsWith("audio")) {
-        if (!fs.existsSync(audioFolder)) fs.mkdirSync(audioFolder);
-        console.log(`Moving ${file} to ${audioFolder}`);
-        fs.renameSync(file, path.join(audioFolder, path.basename(file)));
-    } else if (fType?.startsWith("application")) {
-        if (!fs.existsSync(applicationsFolder)) fs.mkdirSync(applicationsFolder);
-        console.log(`Moving ${file} to ${applicationsFolder}`);
-        fs.renameSync(file, path.join(applicationsFolder, path.basename(file)));
-    } else {
-        if (!fs.existsSync(miscFolder)) fs.mkdirSync(miscFolder);
-        console.log(`Moving ${file} to ${miscFolder}`);
-        fs.renameSync(file, path.join(miscFolder, path.basename(file)));
+    for (const { match, folder } of fileTypeSorting) {
+        if (match(fType)) {
+            if (!fs.existsSync(folder)) fs.mkdirSync(folder);
+            console.log(`Moving ${file} to ${folder}`);
+            fs.renameSync(file, path.join(folder, path.basename(file)));
+            break;
+        }
     }
-});
+}
 
 // remove folders that are empty and not we're expecting to exist
 fs.readdirSync(basePath).forEach((folder) => {
